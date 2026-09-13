@@ -489,39 +489,11 @@ summary::-webkit-details-marker{display:none}
           </sc-if>
 
           <sc-if value="{{ packetReady }}" hint-placeholder-val="{{ false }}">
-            <div style="width:52px;height:52px;border-radius:50%;background:oklch(0.62 0.2 38);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">✓</div>
-            <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:21px;margin-bottom:10px;color:oklch(0.2 0.02 260);text-align:center">Sign &amp; upload to finish onboarding</div>
-            <p style="font-size:13.5px;line-height:1.65;color:#000;max-width:560px;margin:0 auto 26px;text-align:center">Download your personalized MNDA and LOI below, sign them, then upload the signed copies. Our team reviews every submission and activates your portal by email once approved.</p>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:22px">
-              <a href="{{ mndaDownloadUrl }}" download="{{ mndaFilename }}" style="text-decoration:none;display:block;text-align:center;background:oklch(0.97 0.01 235);border:1.5px solid oklch(0.85 0.02 235);border-radius:10px;padding:18px;color:oklch(0.3 0.02 260)">
-                <div style="font-weight:700;font-size:14px;margin-bottom:4px">Download MNDA</div>
-                <div style="font-size:12px;color:oklch(0.5 0.02 260)">Mutual Non-Disclosure Agreement</div>
-              </a>
-              <a href="{{ loiDownloadUrl }}" download="{{ loiFilename }}" style="text-decoration:none;display:block;text-align:center;background:oklch(0.97 0.01 235);border:1.5px solid oklch(0.85 0.02 235);border-radius:10px;padding:18px;color:oklch(0.3 0.02 260)">
-                <div style="font-weight:700;font-size:14px;margin-bottom:4px">Download LOI</div>
-                <div style="font-size:12px;color:oklch(0.5 0.02 260)">Letter of Intent</div>
-              </a>
-            </div>
-
-            <div style="border-top:1.5px solid oklch(0.9 0.01 235);padding-top:20px">
-              <div style="font-weight:700;font-size:14px;margin-bottom:10px;color:oklch(0.25 0.02 260)">Upload your signed copies</div>
-              <label style="display:block;border:1.5px dashed oklch(0.72 0.02 235);border-radius:10px;padding:20px;text-align:center;cursor:pointer;margin-bottom:12px;background:oklch(0.985 0.005 235)">
-                <input type="file" multiple="{{ true }}" accept=".pdf,.doc,.docx" onChange="{{ h.pickSignedFiles }}" style="display:none">
-                <div style="font-size:13.5px;font-weight:600;color:oklch(0.35 0.02 260)">Choose signed MNDA &amp; LOI</div>
-                <div style="font-size:11.5px;color:oklch(0.5 0.02 260);margin-top:4px">PDF, DOC, DOCX &middot; 25 MB per file</div>
-              </label>
-              <sc-if value="{{ hasSignedFiles }}" hint-placeholder-val="{{ false }}">
-                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
-                  <sc-for list="{{ signedFiles }}" as="f" hint-placeholder-count="2">
-                    <div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:oklch(0.3 0.02 260);background:oklch(0.97 0.01 235);border-radius:6px;padding:8px 12px"><span>{{ f.name }}</span><span style="color:oklch(0.5 0.02 260)">{{ f.size }}</span></div>
-                  </sc-for>
-                </div>
-              </sc-if>
-              <button onClick="{{ h.uploadSignedFiles }}" disabled="{{ uploadBusy }}" style="{{ uploadButtonStyle }}">{{ uploadButtonLabel }}</button>
-              <sc-if value="{{ uploadMessage }}" hint-placeholder-val="{{ false }}">
-                <p style="font-size:12.5px;color:{{ uploadMessageColor }};margin:12px 0 0">{{ uploadMessage }}</p>
-              </sc-if>
+            <div style="text-align:center;padding:24px 0">
+              <div style="width:52px;height:52px;border-radius:50%;background:oklch(0.62 0.2 38);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 18px">✓</div>
+              <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:21px;margin-bottom:10px;color:oklch(0.2 0.02 260)">Check your email to sign</div>
+              <p style="font-size:14px;line-height:1.7;color:#000;max-width:480px;margin:0 auto">We've sent your personalized MNDA and LOI to your email for e-signature. Sign both there — once complete, we'll email you access to your onboarding portal.</p>
+              <a href="index.html" style="text-decoration:none;display:inline-block;margin-top:24px;background:oklch(0.62 0.2 38);color:#fff;font-weight:700;font-size:14px;padding:14px 26px;border-radius:8px">Return Home</a>
             </div>
           </sc-if>
 
@@ -711,10 +683,19 @@ class Component extends DCLogic {
   }
 
   pickSignedFiles(e) {
-    const files = Array.from(e.target.files || []);
-    const tooBig = files.find(f => f.size > 25 * 1024 * 1024);
-    if (tooBig) { this.setState({ signedFiles: [], uploadMessage: `"${tooBig.name}" is larger than 25 MB.`, uploadOk: false }); return; }
-    this.setState({ signedFiles: files, uploadMessage: '' });
+    const newFiles = Array.from(e.target.files || []);
+    const tooBig = newFiles.find(f => f.size > 25 * 1024 * 1024);
+    if (tooBig) { this.setState({ uploadMessage: `"${tooBig.name}" is larger than 25 MB.`, uploadOk: false }); return; }
+    // Append rather than replace, so picking files in separate clicks doesn't drop earlier picks.
+    this.setState(s => {
+      const existingNames = new Set(s.signedFiles.map(f => f.name + f.size));
+      const merged = [...s.signedFiles, ...newFiles.filter(f => !existingNames.has(f.name + f.size))];
+      return { signedFiles: merged, uploadMessage: '' };
+    });
+    e.target.value = '';
+  }
+  removeSignedFile(idx) {
+    this.setState(s => ({ signedFiles: s.signedFiles.filter((_, i) => i !== idx) }));
   }
 
   fmtBytes(b) { if (b < 1024) return b + ' B'; if (b < 1024 * 1024) return (b / 1024).toFixed(0) + ' KB'; return (b / 1024 / 1024).toFixed(1) + ' MB'; }
@@ -797,6 +778,12 @@ class Component extends DCLogic {
     const isOilGasNow = d.industry === 'OIL_GAS';
     const isMusicNow = d.industry === 'MUSIC';
     const showAffiliations = (d.primaryClassification === 'Creator' || d.primaryClassification === 'B2B Operating Partner') && !!d.industry;
+    const classificationLabels = {
+      MUSIC: { creator: 'Creator (Songwriter, Recording Artist)', partner: 'B2B Operating Partner (Recording Studio)' },
+      FILM: { creator: 'Creator (Filmmaker)', partner: 'B2B Operating Partner (Post-Production House)' },
+      PATENT: { creator: 'Creator (Inventor)', partner: 'B2B Operating Partner (Contract Manufacturer)' },
+      OIL_GAS: { creator: 'Creator (Landowner)', partner: 'B2B Operating Partner (Well Operator)' },
+    }[d.industry] || { creator: 'Creator', partner: 'B2B Operating Partner' };
     const affiliationCategories = this.affiliationCategoriesFor(d.industry).map(cat => ({
       label: cat.label,
       items: cat.items.map(name => ({ label: name, checked: !!d.affiliations[name], toggle: this.mkMultiToggle('affiliations', name) }))
@@ -875,7 +862,7 @@ class Component extends DCLogic {
     return {
       hasAccountType: !!accountType,
       accountTypeBadge: accountType === 'CORPORATE' ? 'Single-Owner Corporate Account · 5.5% software & platform fee' : (accountType === 'STANDARD' ? 'Standard Multi-Party Account · 38% / 12% split' : ''),
-      d, roleOptions, stateOptions: STATES, showAffiliations, affiliationCategories,
+      d, roleOptions, stateOptions: STATES, showAffiliations, affiliationCategories, classificationLabels,
       submitted, notSubmitted: !submitted,
       companyName: d.companyName,
       companyNameLabel: d.entityType === 'Individual' ? 'Company Name (optional)' : 'Company Name *',
@@ -896,7 +883,7 @@ class Component extends DCLogic {
       mndaFilename: this.state.mnda ? this.state.mnda.filename : 'MNDA.pdf',
       loiDownloadUrl: this.state.loi ? this.base64ToBlobUrl(this.state.loi.base64, 'application/pdf') : '',
       loiFilename: this.state.loi ? this.state.loi.filename : 'LOI.pdf',
-      signedFiles: this.state.signedFiles.map(f => ({ name: f.name, size: this.fmtBytes(f.size) })),
+      signedFiles: this.state.signedFiles.map((f, i) => ({ name: f.name, size: this.fmtBytes(f.size), remove: () => this.removeSignedFile(i) })),
       hasSignedFiles: this.state.signedFiles.length > 0,
       uploadBusy: this.state.uploadBusy,
       uploadButtonLabel: this.state.uploadBusy ? 'Uploading…' : 'Submit signed documents for review',
