@@ -182,8 +182,8 @@ summary::-webkit-details-marker{display:none}
               <label style="display:block;font-size:12.5px;font-weight:600;margin-bottom:6px">3. Primary User Classification *</label>
               <select value="{{ d.primaryClassification }}" onChange="{{ h.primaryClassification }}" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:8px;border:1.5px solid oklch(0.85 0.02 235);font-size:14px;background:#fff;margin-bottom:20px">
                 <option value="">Select…</option>
-                <option value="Creator">Creator (Songwriter, Recording Artist, Filmmaker, Inventor, Landowner)</option>
-                <option value="B2B Operating Partner">B2B Operating Partner (Recording Studio, Post-Production House, Contract Manufacturer, Well Operator)</option>
+                <option value="Creator">{{ classificationLabels.creator }}</option>
+                <option value="B2B Operating Partner">{{ classificationLabels.partner }}</option>
                 <option value="Project Supporter">Project Supporter (Accredited Supporter)</option>
               </select>
 
